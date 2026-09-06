@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import { 
-  Sparkles, 
-  PartyPopper, 
-  Gift, 
-  Upload, 
-  Trash2, 
-  Heart, 
-  Volume2, 
-  VolumeX, 
-  Flame, 
-  Share2, 
-  Plus, 
-  CheckCircle2, 
-  Play, 
+import {
+  Sparkles,
+  PartyPopper,
+  Gift,
+  Upload,
+  Trash2,
+  Heart,
+  Volume2,
+  VolumeX,
+  Flame,
+  Share2,
+  Plus,
+  CheckCircle2,
+  Play,
   Pause,
   Wand2,
   Cake,
@@ -44,8 +44,8 @@ const FloatingBalloons = () => {
         const size = 35 + Math.random() * 25;
 
         return (
-          <div 
-            key={i} 
+          <div
+            key={i}
             className="balloon-item"
             style={{
               left: `${left}%`,
@@ -71,7 +71,7 @@ export default function App() {
   const [customWishText, setCustomWishText] = useState('Wishing you the happiest birthday ever! May your day be filled with sparkle, magic, and boundless joy.');
   const [wishesList, setWishesList] = useState(PRESET_WISHES);
   const [newWishInput, setNewWishInput] = useState('');
-  
+
   // Interactive feature states
   const [candlesLit, setCandlesLit] = useState([true, true, true]);
   const [isBlowing, setIsBlowing] = useState(false);
@@ -139,6 +139,22 @@ export default function App() {
     setCandlesLit([true, true, true]);
   };
 
+  // Flying balloon photos state
+  const [flyingPhotos, setFlyingPhotos] = useState([]);
+
+  const spawnFlyingPhoto = (url, caption) => {
+    const colors = ['#ff3b8d', '#9d4edd', '#ffc107', '#00f2fe', '#ff416c', '#4ade80', '#c77dff'];
+    const newFlyingItem = {
+      id: Date.now() + Math.random(),
+      url,
+      caption,
+      left: Math.random() * 75 + 10,
+      duration: 10 + Math.random() * 5,
+      color: colors[Math.floor(Math.random() * colors.length)]
+    };
+    setFlyingPhotos((prev) => [...prev, newFlyingItem]);
+  };
+
   const handlePhotoUpload = (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
@@ -146,18 +162,37 @@ export default function App() {
     files.forEach((file) => {
       const reader = new FileReader();
       reader.onload = (event) => {
+        const photoUrl = event.target.result;
+        const caption = photoCaptionInput || file.name.replace(/\.[^/.]+$/, "") || 'Sweet Memory ❤️';
         setPhotos((prev) => [
           {
             id: Date.now().toString() + Math.random(),
-            url: event.target.result,
-            caption: photoCaptionInput || file.name.replace(/\.[^/.]+$/, "") || 'Sweet Memory ❤️'
+            url: photoUrl,
+            caption
           },
           ...prev
         ]);
+        // Trigger photo balloon flight upwards!
+        spawnFlyingPhoto(photoUrl, caption);
+        triggerConfetti();
       };
       reader.readAsDataURL(file);
     });
     setPhotoCaptionInput('');
+  };
+
+  const handleFlyPhoto = (photo) => {
+    spawnFlyingPhoto(photo.url, photo.caption);
+    triggerConfetti();
+  };
+
+  const handleReleaseAllBalloons = () => {
+    photos.forEach((photo, index) => {
+      setTimeout(() => {
+        spawnFlyingPhoto(photo.url, photo.caption);
+      }, index * 350);
+    });
+    triggerConfetti();
   };
 
   const handleDeletePhoto = (id) => {
@@ -204,7 +239,7 @@ export default function App() {
         { note: 264, duration: 0.4 }, { note: 264, duration: 0.4 },
         { note: 297, duration: 0.8 }, { note: 264, duration: 0.8 },
         { note: 352, duration: 0.8 }, { note: 330, duration: 1.2 },
-        
+
         { note: 264, duration: 0.4 }, { note: 264, duration: 0.4 },
         { note: 297, duration: 0.8 }, { note: 264, duration: 0.8 },
         { note: 396, duration: 0.8 }, { note: 352, duration: 1.2 }
@@ -240,8 +275,33 @@ export default function App() {
     <div className="birthday-app">
       <FloatingBalloons />
 
+      {/* Flying Photo Balloons Overlay */}
+      <div className="flying-photos-container">
+        {flyingPhotos.map((item) => (
+          <div
+            key={item.id}
+            className="flying-photo-item"
+            style={{
+              left: `${item.left}%`,
+              animationDuration: `${item.duration}s`,
+              '--balloon-color': item.color
+            }}
+            onAnimationEnd={() => {
+              setFlyingPhotos((prev) => prev.filter((p) => p.id !== item.id));
+            }}
+          >
+            <div className="flying-balloon-head" style={{ backgroundColor: item.color }}></div>
+            <div className="flying-string"></div>
+            <div className="flying-polaroid">
+              <img src={item.url} alt={item.caption} />
+              <span>{item.caption}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
       {/* Floating Audio Controls */}
-      <button 
+      <button
         className={`audio-btn ${isPlayingMusic ? 'playing' : ''}`}
         onClick={toggleMusic}
         title={isPlayingMusic ? "Pause Music" : "Play Birthday Tune"}
@@ -265,10 +325,10 @@ export default function App() {
         <div className="name-edit-bar glass-panel">
           <div className="input-group">
             <label>Name of Birthday Star:</label>
-            <input 
-              type="text" 
-              value={recipientName} 
-              onChange={(e) => setRecipientName(e.target.value)} 
+            <input
+              type="text"
+              value={recipientName}
+              onChange={(e) => setRecipientName(e.target.value)}
               placeholder="Enter name..."
             />
           </div>
@@ -325,8 +385,8 @@ export default function App() {
 
             <div className="cake-actions">
               {candlesLit.some(Boolean) ? (
-                <button 
-                  className={`btn-primary ${isBlowing ? 'blowing-active' : ''}`} 
+                <button
+                  className={`btn-primary ${isBlowing ? 'blowing-active' : ''}`}
                   onClick={handleBlowCandles}
                   disabled={isBlowing}
                 >
@@ -354,8 +414,8 @@ export default function App() {
           {/* Photo Upload Controls */}
           <div className="upload-box glass-panel">
             <div className="upload-inputs">
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder="Add a sweet photo caption..."
                 value={photoCaptionInput}
                 onChange={(e) => setPhotoCaptionInput(e.target.value)}
@@ -364,14 +424,22 @@ export default function App() {
               <label className="upload-btn">
                 <Upload size={20} />
                 <span>Upload Photos</span>
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  multiple 
-                  onChange={handlePhotoUpload} 
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handlePhotoUpload}
                   style={{ display: 'none' }}
                 />
               </label>
+              <button
+                type="button"
+                className="release-all-btn"
+                onClick={handleReleaseAllBalloons}
+                title="Release all memory photos into the sky!"
+              >
+                <span>Fly All Photo Balloons 🎈✨</span>
+              </button>
             </div>
           </div>
 
@@ -381,7 +449,7 @@ export default function App() {
               <div key={photo.id} className="photo-card animate-pop">
                 <div className="img-container">
                   <img src={photo.url} alt={photo.caption} />
-                  <button 
+                  <button
                     className="delete-photo-btn"
                     onClick={() => handleDeletePhoto(photo.id)}
                     title="Delete photo"
@@ -391,7 +459,13 @@ export default function App() {
                 </div>
                 <div className="photo-caption">
                   <span>{photo.caption}</span>
-                  <Heart size={16} className="heart-icon fill-pink" />
+                  <button
+                    className="fly-btn"
+                    onClick={() => handleFlyPhoto(photo)}
+                    title="Attach balloon and fly upwards!"
+                  >
+                    Fly 🎈
+                  </button>
                 </div>
               </div>
             ))}
@@ -407,8 +481,8 @@ export default function App() {
           <p className="section-desc">Add your heartfelt messages and animated greetings!</p>
 
           <form onSubmit={handleAddWish} className="wish-form">
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="Write your custom birthday message..."
               value={newWishInput}
               onChange={(e) => setNewWishInput(e.target.value)}
@@ -448,8 +522,8 @@ export default function App() {
               { title: "Unforgettable Dreams Come True ✨", hint: "Tap to open!" },
               { title: "A Lifetime of Boundless Happiness 💖", hint: "Tap to open!" }
             ].map((gift, idx) => (
-              <div 
-                key={idx} 
+              <div
+                key={idx}
                 className={`gift-box glass-panel ${openedGifts[idx] ? 'opened' : ''}`}
                 onClick={() => toggleGift(idx)}
               >
